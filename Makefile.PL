@@ -13,4 +13,6 @@ test_requires 'Test::More';
 auto_set_repository;
 auto_include;
 
+readme_from 'bin/inflato';
+
 WriteAll;

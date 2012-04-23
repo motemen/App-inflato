@@ -1,0 +1,34 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use App::inflato;
+
+App::inflato->new(@ARGV)->run;
+
+__END__
+
+=head1 NAME
+
+inflato
+
+=head1 SYNOPSIS
+
+  inflato pm My::Module
+
+  inflato --save mymodule ~/project/Existing-My-App --hint Existing::My::App
+
+=head1 OPTIONS AND ARGUMENTS
+
+=over 4
+
+=item inflato [--expand] I<skeleton> I<project>
+
+Expands I<skeleton> for I<project> into new directory.
+
+=item inflato --save I<skeleton> I<dir> --hint I<project_name>
+
+Creates new skeleton from an existing project.
+
+=back
+
+=cut

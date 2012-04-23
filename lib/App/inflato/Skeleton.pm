@@ -5,7 +5,6 @@ use Text::MicroTemplate;
 use Path::Class;
 use File::chdir;
 use File::Util qw(escape_filename);
-use List::Util qw(first);
 use Class::Accessor::Lite (
     new => 1,
     ro  => [ 'root', 'name' ],

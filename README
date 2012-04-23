@@ -1,0 +1,15 @@
+NAME
+    inflato - Project skeleton generator
+
+SYNOPSIS
+      inflato pm My::Module
+
+      inflato --save myapp ~/project/Existing-My-App --hint Existing::My::App
+
+OPTIONS AND ARGUMENTS
+    inflato [--expand] *skeleton* *project*
+        Expands *skeleton* for *project* into new directory.
+
+    inflato --save *skeleton* *dir* --hint *project_name*
+        Creates new skeleton from an existing project.
+

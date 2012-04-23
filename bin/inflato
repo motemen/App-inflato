@@ -9,13 +9,13 @@ __END__
 
 =head1 NAME
 
-inflato
+inflato - Project skeleton generator
 
 =head1 SYNOPSIS
 
   inflato pm My::Module
 
-  inflato --save mymodule ~/project/Existing-My-App --hint Existing::My::App
+  inflato --save myapp ~/project/Existing-My-App --hint Existing::My::App
 
 =head1 OPTIONS AND ARGUMENTS
 

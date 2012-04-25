@@ -20,47 +20,100 @@ sub new {
 sub run {
     my $self = shift;
 
+    my ($arg1, @argv) = @{ $self->{argv} };
+
+    my $parser = Getopt::Long::Parser->new(
+        config => [ 'require_order' ],
+    );
+
     local @ARGV = @{ $self->{argv} };
-    pod2usage unless @ARGV;
+    $parser->getoptions(
+        'h|help' => \my $help,
+        'l|list' => \my $list,
+        'e|expand=s' => \my $expand_skel,
+        's|save=s'   => \my $save_skel,
+    );
 
-    if ($ARGV[0] =~ /^(?:--help|-h)$/) {
-        pod2usage({ -verbose => 1 });
-    } elsif ($ARGV[0] =~ /^(?:--save|-s)$/) {
-        # save
-        shift @ARGV; # discard '-s'
+    if ($help) {
+        $self->help;
+    } elsif ($list) {
+        $self->list;
+    } elsif ($expand_skel) {
+        $self->expand($expand_skel, @ARGV);
+    } elsif ($save_skel) {
+        $self->save($save_skel, @ARGV);
+    } elsif (@ARGV >= 2) {
+        $self->expand(@ARGV);
+    } else {
+        pod2usage;
+    }
 
-        my $skeleton_name = shift @ARGV or pod2usage;
-        my $source_dir    = shift @ARGV or pod2usage;
+    exit;
 
-        GetOptions(
-            'hint=s' => \my $hint_name,
-        );
-
-        pod2usage unless $hint_name;
-
-        my $skeleton = App::inflato::Skeleton->new(
-            root => $self->root->subdir('skeleton', $skeleton_name),
-            name => $hint_name
-        );
-        $skeleton->save(source => dir($source_dir));
-    } elsif (($ARGV[0] =~ /^(?:--expand|-x)$/ && shift @ARGV) || $ARGV[0] !~ /^-/) {
-        # expand
-        my $skeleton_name = shift @ARGV or pod2usage;
-        my $name          = shift @ARGV or pod2usage;
-
-        my $skeleton = App::inflato::Skeleton->new(
-            root => $self->root->subdir('skeleton', $skeleton_name),
-            name => $name,
-        );
-        $skeleton->expand;
+    if (!defined $arg1 || $arg1 =~ /^(?:--list|-l)$/) {
+        $self->list;
+    }
+    elsif ($arg1 =~ /^(?:--help|-h)$/) {
+        $self->help;
+    }
+    elsif ($arg1 =~ /^(?:--save|-s)$/) {
+        $self->save(@argv);
+    }
+    elsif ($arg1 =~ /^(?:--expand|-x)$/ || ($arg1 !~ /^-/ && unshift @argv, $arg1)) {
+        $self->expand(@argv);
     } else {
         pod2usage;
     }
 }
 
+sub skeleton {
+    my ($self, $skeleton_name, $project_name) = @_;
+    return App::inflato::Skeleton->new(
+        root => $self->root->subdir('skeleton', $skeleton_name),
+        name => $project_name,
+    );
+}
+
 sub root {
     my $self = shift;
-    return $self->{root} ||= dir(File::HomeDir->my_home)->subdir('.inflato');
+    return $self->{root} ||= $ENV{INFLATO_ROOT} ? dir($ENV{INFLATO_ROOT}) : dir(File::HomeDir->my_home)->subdir('.inflato');
+}
+
+sub expand {
+    my $self = shift;
+    my $skeleton_name = shift or pod2usage;
+    my $project_name  = shift or pod2usage;
+
+    $self->skeleton($skeleton_name, $project_name)->expand;
+}
+
+sub save {
+    my $self = shift;
+    my $skeleton_name = shift or pod2usage;
+    my $project_name  = shift or pod2usage;
+
+    local @ARGV = @_;
+
+    my $dir = '.';
+    GetOptions(
+        'd|dir=s' => \$dir
+    );
+
+    die 'Could not parse args' if @ARGV;
+
+    $self->skeleton($skeleton_name, $project_name)->save(dir => dir($dir));
+}
+
+sub list {
+    my $self = shift;
+    my $skeleton_dir = $self->root->subdir('skeleton');
+    print "List of available skeletons:\n";
+    printf " * %s\n", $_->relative($skeleton_dir) for grep { -d $_ } $skeleton_dir->children;
+}
+
+sub help {
+    my $self = shift;
+    pod2usage({ -verbose => 1 });
 }
 
 1;

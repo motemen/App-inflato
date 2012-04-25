@@ -5,6 +5,7 @@ use Text::MicroTemplate;
 use Path::Class;
 use File::chdir;
 use File::Util qw(escape_filename);
+use Carp;
 use Class::Accessor::Lite (
     new => 1,
     ro  => [ 'root', 'name' ],
@@ -34,15 +35,19 @@ our $SKELETON;
 sub SKELETON { $SKELETON }
 
 sub expand {
-    my $self = shift;
-    $self->expand_files;
+    my ($self, %args) = @_;
+
+    croak qq(skeleton '$self->{name}' does not exist) unless $self->exists;
+
+    $self->expand_files(%args);
+    $self->run_setup;
 }
 
 sub expand_files {
-    my $self = shift;
+    my ($self, %args) = @_;
 
-    my $base = dir($CWD)->subdir($self->escaped_name('-'));
-    $base->mkpath(1);
+    my $dir = delete $args{dir} || dir($CWD)->subdir($self->escaped_name('-'));
+    $dir->mkpath(1);
 
     my $files = $self->root->subdir('files');
     $files->recurse(
@@ -54,28 +59,43 @@ sub expand_files {
             my $path = $e->relative($files);
             $path =~ s# ($RESERVED_RE) # $RESERVED->{$1}->($self) #gex;
 
-            printf STDERR "%s -> %s\n", $e->relative($files), $path if $DEBUG;
-
-            my $target = $base->file($path);
-            $target->dir->mkpath(1);
+            my $target = $dir->file($path);
+            printf STDERR "%s -> %s\n", $e->relative($files), $target->relative($CWD) if $DEBUG;
 
             my $content = $e->slurp;
                $content =~ s# ($RESERVED_RE) # $RESERVED->{$1}->($self) #gex;
             $self->mt->parse($content);
-
-            # TODO chmod
-            my $fh = $target->openw;
-            $fh->print(do {
+            $content = do {
                 local $_ = local $SKELETON = $self;
                 $self->mt->build->();
-            });
+            };
+
+            $target->dir->mkpath(1);
+
+            my $fh = $target->openw;
+            $fh->print($content);
+            $fh->close;
+            chmod $e->stat->mode & 07777, $target;
         }
     );
 }
 
+sub run_setup {
+    my $self = shift;
+    my @setup = grep { -x $_ } glob $self->root->file('setup.*');
+    foreach my $setup (@setup) {
+        print STDERR "running $setup\n" if $DEBUG;
+        local $CWD = dir($CWD)->subdir($self->escaped_name('-'));
+        system $setup;
+    }
+}
+
 sub save {
     my ($self, %args) = @_;
-    my $source = delete $args{source};
+
+    my $dir = delete $args{dir} or croak;
+
+    croak qq(skeleton '$self->{name}' already exists) if $self->exists;
 
     my $cb = sub {
         my $e = shift;
@@ -84,13 +104,11 @@ sub save {
         my $reverse = {}; @$reverse{ map { $_->($self) } values %$RESERVED} = keys %$RESERVED;
         my $reverse_re = join '|', map "(\Q$_\E)", keys %$reverse;
 
-        my $path = $e->relative($source);
+        my $path = $e->relative($dir);
         $path =~ s# ($reverse_re) # $reverse->{$1} #gex;
 
-        printf STDERR "%s -> %s\n", $e->relative($source), $path if $DEBUG;
-
         my $target = $self->root->file('files', $path);
-        $target->dir->mkpath(1);
+        printf STDERR "%s -> %s\n", $e->relative($dir), $target if $DEBUG;
 
         my $content = $e->slurp;
 
@@ -100,16 +118,25 @@ sub save {
 
         $content =~ s# ($reverse_re) # $reverse->{$1} #gex;
 
+        $target->dir->mkpath(1);
+
         my $fh = $target->openw;
         $fh->print($content);
+        $fh->close;
+        chmod $e->stat->mode & 07777, $target;
     };
 
-    if (my $git_files = do { local $CWD = $source; qx(git ls-files -z) }) {
+    if (my $git_files = do { local $CWD = $dir; qx(git ls-files -z) }) {
         printf STDERR "using `git ls-files`\n" if $DEBUG;
-        $cb->($source->file($_)) for split /\0/, $git_files;
+        $cb->($dir->file($_)) for split /\0/, $git_files;
     } else {
-        $source->recurse(callback => $cb);
+        $dir->recurse(callback => $cb);
     }
+}
+
+sub exists {
+    my $self = shift;
+    return -d $self->root;
 }
 
 sub escaped_name {

@@ -15,20 +15,38 @@ inflato - Project skeleton generator
 
   inflato pm My::Module
 
-  inflato --save myapp ~/project/Existing-My-App --hint Existing::My::App
+  inflato --save myapp Existing::My::App --dir ~/project/Existing-My-App
+
+  inflato --list
 
 =head1 OPTIONS AND ARGUMENTS
 
+=head2 inflato [--expand] I<skeleton> I<Project::Name> [--dir=I<dir>]
+
+Expands I<skeleton> for project named I<Project::Name> into a new directory under I<dir>.
+
 =over 4
 
-=item inflato [--expand] I<skeleton> I<project>
+=item --dir=I<dir>
 
-Expands I<skeleton> for I<project> into new directory.
-
-=item inflato --save I<skeleton> I<dir> --hint I<project_name>
-
-Creates new skeleton from an existing project.
+Directory to expand project files into. Defaults to "./I<Project-Name>".
 
 =back
+
+=head2 inflato --save I<skeleton> I<Project::Name> [--dir=I<dir>]
+
+Creates a new skeleton I<skeleton> from an existing project I<Project::Name>, whose root is I<dir>.
+
+=over 4
+
+=item --dir=I<dir>
+
+Directory to create skeleton from. Defaults to ".".
+
+=back
+
+=head2 inflato --list
+
+Prints defined skeleton.
 
 =cut

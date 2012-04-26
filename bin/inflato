@@ -23,7 +23,7 @@ inflato - Project skeleton generator
 
 =head2 inflato [--expand] I<skeleton> I<Project::Name> [--dir=I<dir>] [--force]
 
-Expands I<skeleton> for project named I<Project::Name> into a new directory under I<dir>.
+Expands I<skeleton> for a project named I<Project::Name> into a new directory under I<dir>.
 
 =over 4
 
@@ -33,7 +33,7 @@ Directory to expand project files into. Defaults to "./I<Project-Name>".
 
 =back
 
-=head2 inflato --save I<skeleton> I<Project::Name> [--dir=I<dir>] [--force]
+=head2 inflato --save I<skeleton> I<Project::Name> [--dir=I<dir>] [--force] [--with-bootstrap]
 
 Creates a new skeleton I<skeleton> from an existing project I<Project::Name>, whose root is I<dir>.
 
@@ -42,6 +42,10 @@ Creates a new skeleton I<skeleton> from an existing project I<Project::Name>, wh
 =item --dir=I<dir>
 
 Directory to create skeleton from. Defaults to ".".
+
+=item --with-bootstrap
+
+Creats bootstrap script at the top of skeleton directory.
 
 =back
 

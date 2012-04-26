@@ -27,7 +27,6 @@ all_from 'lib/App/inflato.pm';
 requires 'Class::Accessor::Lite';
 
 requires 'File::HomeDir';
-requires 'File::Util';
 requires 'File::chdir';
 requires 'Path::Class';
 

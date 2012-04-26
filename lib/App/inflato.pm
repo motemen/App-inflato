@@ -47,23 +47,6 @@ sub run {
     } else {
         pod2usage;
     }
-
-    exit;
-
-    if (!defined $arg1 || $arg1 =~ /^(?:--list|-l)$/) {
-        $self->list;
-    }
-    elsif ($arg1 =~ /^(?:--help|-h)$/) {
-        $self->help;
-    }
-    elsif ($arg1 =~ /^(?:--save|-s)$/) {
-        $self->save(@argv);
-    }
-    elsif ($arg1 =~ /^(?:--expand|-x)$/ || ($arg1 !~ /^-/ && unshift @argv, $arg1)) {
-        $self->expand(@argv);
-    } else {
-        pod2usage;
-    }
 }
 
 sub skeleton {
@@ -84,7 +67,15 @@ sub expand {
     my $skeleton_name = shift or pod2usage;
     my $project_name  = shift or pod2usage;
 
-    $self->skeleton($skeleton_name, $project_name)->expand;
+    local @ARGV = @_;
+
+    GetOptions(
+        'd|dir=s' => \my $dir,
+        'f|force' => \my $force,
+    );
+
+    my $skeleton = $self->skeleton($skeleton_name, $project_name);
+    $skeleton->expand(dir => $dir, force => $force);
 }
 
 sub save {
@@ -94,14 +85,16 @@ sub save {
 
     local @ARGV = @_;
 
-    my $dir = '.';
     GetOptions(
-        'd|dir=s' => \$dir
+        'd|dir=s' => \my $dir,
+        'f|force' => \my $force,
+        'with-bootstrap' => \my $with_bootstrap,
     );
 
     die 'Could not parse args' if @ARGV;
 
-    $self->skeleton($skeleton_name, $project_name)->save(dir => dir($dir));
+    my $skeleton = $self->skeleton($skeleton_name, $project_name);
+    $skeleton->save(dir => $dir, force => $force, with_bootstrap => $with_bootstrap);
 }
 
 sub list {
